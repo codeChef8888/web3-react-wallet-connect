@@ -1,26 +1,44 @@
 import { useWeb3React } from '@web3-react/core';
-import { injected } from '../helpers/Connector';
-import React from 'react';
+import { RPC_URLS, injected } from '../helpers/Connector';
+import React, { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
+import Web3 from 'web3';
+import {Web3Provider}  from '@ethersproject/providers';
 
-const Web3ReactConnectionComponent = () => {
+const Web3ReactConnectionComponent = (props) => {
+
 	//connector, library, chainId, account, activate, deactivate
 	const web3reactContext = useWeb3React(); 
-	//web3react
-	const writeToContractUsingWeb3React = async () => {
-		try {
-			const randomNumber = Math.floor(Math.random() * 100);
-			const myContract = getContract(web3reactContext.library, web3reactContext.account);
-			const overrides = {
-				gasLimit: 230000
-			};
-			const response = await myContract.store(randomNumber, overrides);
-			console.log(response);
-			alert('write ' + randomNumber);
-		} catch (ex) {
-			console.log(ex);
-			alert(ex);
-		}
-	};
+	const { account, library } = useWeb3React(); // Accessing the account and library from the Web3ReactContext
+	const [balance, setBalance] = useState('');
+
+	useEffect(() => {
+		//for the connected account balance
+		const fetchBalance = async () => {
+		  try {
+			if (window.ethereum) {
+				const web3 = new Web3(window.ethereum);
+				const accountAddress = account; // Replace with the actual Ethereum account address
+				web3.eth.getBalance(accountAddress, (error, balance) => {
+				  if (error) {
+					console.log('Error fetching balance:', error);
+				  } else {
+					const balance = web3.utils.fromWei(balance, 'ether');
+					setBalance(balance);
+					console.log('Account Balance:', balanceInEther, 'BNB');
+				  }
+				});
+			  
+			} else {
+			  console.log('No Ethereum provider found');
+			}
+		  } catch (error) {
+			console.log('Error fetching balance:', error);
+		  }
+		};
+	
+		fetchBalance();
+	  }, []);
 
 	const disconnectMetamaskSimple = () => {
 		try {
@@ -54,14 +72,20 @@ const Web3ReactConnectionComponent = () => {
 	return (
 		<div className="flex flex-col space-y-7 items-start pt-10 w-1/2 border-2 border-yellow-300">
 			<h2>Web3React Control</h2>
-			{web3reactContext.account ? <p>{web3reactContext.account}</p> : <p>Not connected</p>}
+{/* for the account and chainId */}
+			{web3reactContext.account ? <div>
+				<p>Account: {web3reactContext.account}</p>
+				<p>ChainId: {web3reactContext.chainId}</p>
+				</div>: <p>Not connected</p>}
+				<div>
+				{/* for the balance	 */}
+				{balance !== '' ? (
+					<p>Account Balance: {balance} ETH</p>
+				) : (
+					<p>Loading balance...</p>
+				)}
+    </div>
 			<div className="flex space-x-3">
-				<button
-					className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-					onClick={writeToContractUsingWeb3React}
-				>
-					Write To Contract Via Web3React
-				</button>
 
 				<button
 					className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
